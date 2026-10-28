@@ -123,6 +123,10 @@ input, select, textarea {
   color: var(--text-primary);
 }
 
+[hidden] {
+  display: none !important;
+}
+
 /* Tabular numbers for numerical scanning */
 .card-stars,
 .card-gain,
@@ -865,6 +869,9 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.export-menu[hidden] {
+  display: none !important;
 }
 .export-item {
   text-align: left;

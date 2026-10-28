@@ -146,6 +146,10 @@ input, select, textarea {
   color: var(--text-primary);
 }
 
+[hidden] {
+  display: none !important;
+}
+
 /* Tabular numbers for numerical scanning */
 .card-stars,
 .card-gain,
@@ -888,6 +892,9 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.export-menu[hidden] {
+  display: none !important;
 }
 .export-item {
   text-align: left;
@@ -2192,7 +2199,7 @@ input[type="range"]::-moz-range-thumb {
             <span class="saved-count" id="saved-count">0</span>
           </button>
 
-          <div class="shelf-export-wrap" id="shelf-export-wrap">
+          <div class="shelf-export-wrap" id="shelf-export-wrap" hidden>
             <button type="button" class="btn-export" id="btn-export" title="Export saved shelf" aria-haspopup="true" aria-expanded="false">
               Export ▾
             </button>
@@ -2264,7 +2271,7 @@ input[type="range"]::-moz-range-thumb {
 </div>
 
 <footer class="foot">
-  <span>SourceShelf · <b id="total">1,822</b> apps indexed</span>
+  <span>SourceShelf · <b id="total">1,823</b> apps indexed</span>
   <span>Data: GitHub API · refreshed every night by a scheduled workflow</span>
   <span>Built for people who'd rather not scroll 40 “awesome-*” lists</span>
 </footer>
@@ -2469,6 +2476,8 @@ window.__SUPABASE__ = {"url":"https://hzxiszvzdiswvhvlwgch.supabase.co","anonKey
     if (cnt) cnt.textContent = SAVED.size;
     const btn = $("#btn-saved");
     if (btn) btn.classList.toggle("on", S.savedOnly);
+    const expWrap = $("#shelf-export-wrap");
+    if (expWrap) expWrap.hidden = (SAVED.size === 0 && !S.savedOnly);
     $$(".card-bookmark").forEach((b) => {
       b.classList.toggle("on", SAVED.has(b.dataset.save));
     });

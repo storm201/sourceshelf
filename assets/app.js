@@ -105,6 +105,8 @@
     if (cnt) cnt.textContent = SAVED.size;
     const btn = $("#btn-saved");
     if (btn) btn.classList.toggle("on", S.savedOnly);
+    const expWrap = $("#shelf-export-wrap");
+    if (expWrap) expWrap.hidden = (SAVED.size === 0 && !S.savedOnly);
     $$(".card-bookmark").forEach((b) => {
       b.classList.toggle("on", SAVED.has(b.dataset.save));
     });
