@@ -148,13 +148,24 @@
   }
 
   function nsCard(a) {
-    return `<a class="ns-card" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer" title="${esc(a.id)}">
-      <div class="ns-body">
-        <span class="ns-name">${esc(a.name)}</span>
-        <span class="ns-meta">★ ${fmtN(a.stars)} · ${esc(a.category)}</span>
-        <p class="ns-desc">${esc(a.description || "")}</p>
+    const gainBadge = (a._delta && a._delta > 0) ? `<span class="card-gain">+${fmtN(a._delta)}</span>` : "";
+    return `<article class="card ns-card" data-id="${esc(a.id)}" tabindex="0">
+      <div class="card-h">
+        <div class="card-logo" aria-hidden="true">
+          <span>${esc((a.name[0] || "?").toUpperCase())}</span>
+          <img src="${safeUrl(a.avatar)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">
+        </div>
+        <div class="card-title-group">
+          <a class="card-name" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer" data-stop="1" title="${esc(a.id)}">${esc(a.name)}</a>
+          ${gainBadge}
+        </div>
+        <span class="card-stars">★ ${fmtN(a.stars)}</span>
       </div>
-    </a>`;
+      <p class="card-desc">${esc(a.description || "")}</p>
+      <div class="card-f">
+        <span class="card-meta">${esc(a.category)}</span>
+      </div>
+    </article>`;
   }
 
   function renderStrip() {
@@ -244,10 +255,10 @@
   const F = facets();
 
   function buildSidebar() {
-    // categories
+    // categories - clean minimal rows, no icons
     const cats = [...F.cats.entries()].sort((a, b) => b[1] - a[1]);
     $("#f-cats").innerHTML = cats.map(([c, n]) =>
-      `<button class="fitem" data-cat="${esc(c)}"><span class="ico">${catIcon(c)}</span><span class="t">${esc(c)}</span><span class="c">${n}</span></button>`
+      `<button class="fitem" data-cat="${esc(c)}"><span class="t">${esc(c)}</span><span class="c">${n}</span></button>`
     ).join("");
 
     const platOrder = ["Windows", "macOS", "Linux", "Android", "iOS", "Web", "Self-Hosted", "CLI / TUI", "Browser Extension", "VS Code"];
@@ -257,12 +268,12 @@
     });
     $("#f-plats").innerHTML = plats.map(([p, n]) => {
       const m = PLAT_META[p] || ["", p, ""];
-      return `<button class="fitem" data-plat="${esc(p)}"><span class="ico">${m[2]}</span><span class="t">${esc(m[1])}</span><span class="c">${n}</span></button>`;
+      return `<button class="pill-tag" data-plat="${esc(p)}"><span class="t">${esc(m[1] || p)}</span><span class="c">${n}</span></button>`;
     }).join("");
 
-    const lics = [...F.lics.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const lics = [...F.lics.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     $("#f-lics").innerHTML = lics.map(([l, n]) =>
-      `<label class="chk"><input type="checkbox" data-lic="${esc(l)}"><span class="t" style="flex:1">${esc(l)}</span><span class="c">${n}</span></label>`
+      `<button class="pill-tag" data-lic="${esc(l)}"><span class="t">${esc(l)}</span><span class="c">${n}</span></button>`
     ).join("");
   }
 
@@ -280,14 +291,12 @@
 
     const html = picked.map(([c, n]) =>
       `<button class="tile" data-cat="${esc(c)}" title="Filter by ${esc(c)}">
-        <span class="ti">${catIcon(c)}</span>
         <b class="t-name">${esc(c)}</b>
         <span class="t-count">${n}</span>
       </button>`
     ).join("");
 
     const moreBtn = `<button class="tile tile-more" id="tile-more" aria-label="Explore all categories" title="Explore all categories">
-      <span class="ti"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>
       <b class="t-name">All categories</b>
       <span class="t-count">${F.cats.size}</span>
     </button>`;
@@ -337,39 +346,37 @@
   }
 
   // ---------------------------------------------------------- render
-  function cardHTML(a, opts) {
-    const forceNew = opts && typeof opts.forceNew === "boolean" ? opts.forceNew : null;
-    const showNew = forceNew === null ? !!a.isNew : forceNew;
-    const plats = (a.platforms || []).slice(0, 4).map((p) => {
-      const m = PLAT_META[p];
-      return `<span class="tag os">${m ? m[2] : ""} ${esc(m ? m[1] : p)}</span>`;
-    }).join("");
-    const over = (a.platforms || []).length - 4;
+  function cardHTML(a) {
+    const gainBadge = (a._delta && a._delta > 0)
+      ? `<span class="card-gain">+${fmtN(a._delta)}</span>`
+      : "";
+    const primaryPlat = (a.platforms && a.platforms.length) ? a.platforms[0] : (a.language || "");
+    const metaStr = esc(a.category) + (primaryPlat ? ` · ${esc(primaryPlat)}` : "");
+    const lic = a.license ? esc(a.license) : "";
     const dl = a._dl;
     const btn = dl
-      ? `<a class="btn primary" href="${safeUrl(bestAsset(a).url)}" target="_blank" rel="noopener noreferrer" title="Download ${esc(bestAsset(a).name)} · Hosted on GitHub">${I.dl} Download<span class="n">${fmtSize(bestAsset(a).size)}</span></a>`
-      : `<a class="btn primary" href="${safeUrl(a.url + '/releases')}" target="_blank" rel="noopener noreferrer" title="Open releases page on GitHub">${I.dl} Get app</a>`;
+      ? `<a class="card-dl" href="${safeUrl(bestAsset(a).url)}" target="_blank" rel="noopener noreferrer" data-stop="1" title="Download ${esc(bestAsset(a).name)}">${I.dl}<span>Download</span><span class="size">${fmtSize(bestAsset(a).size)}</span></a>`
+      : `<a class="card-dl" href="${safeUrl(a.url + '/releases')}" target="_blank" rel="noopener noreferrer" data-stop="1" title="Open releases on GitHub">${I.dl}<span>Get app</span></a>`;
+
     return `<article class="card" data-id="${esc(a.id)}" tabindex="0">
       <div class="card-h">
-        <div class="card-logo" aria-hidden="true"><span>${esc((a.name[0] || "?").toUpperCase())}</span><img src="${safeUrl(a.avatar)}" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>
-        <div class="card-t">
-          <a class="card-name" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer" data-stop="1" title="${esc(a.owner + "/" + a.name)}">${esc(a.name)}</a>
-          <div class="card-owner">${esc(a.owner)}</div>
+        <div class="card-logo" aria-hidden="true">
+          <span>${esc((a.name[0] || "?").toUpperCase())}</span>
+          <img src="${safeUrl(a.avatar)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">
         </div>
-        <span class="card-stars">${I.star}${fmtN(a.stars)}</span>
+        <div class="card-title-group">
+          <a class="card-name" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer" data-stop="1" title="${esc(a.owner + "/" + a.name)}">${esc(a.name)}</a>
+          ${gainBadge}
+        </div>
+        <span class="card-stars">★ ${fmtN(a.stars)}</span>
       </div>
-      <p class="card-desc">${esc(a.description)}</p>
-      <div class="card-tags">
-        ${showNew ? '<span class="tag badge-new">new</span>'
-        : (isHot(a) ? '<span class="tag badge-hot">hot</span>' : "")}
-        <span class="tag cat">${esc(a.category)}</span>
-        ${plats}${over > 0 ? `<span class="tag">+${over}</span>` : ""}
-        ${a.license ? `<span class="tag lic">${esc(a.license)}</span>` : ""}
-      </div>
+      <p class="card-desc">${esc(a.description || "")}</p>
       <div class="card-f">
+        <div class="card-meta">
+          <span>${metaStr}</span>
+          ${lic ? `<span class="card-lic">· ${lic}</span>` : ""}
+        </div>
         ${btn}
-        <a class="btn gh" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer" data-stop="1" aria-label="GitHub repository">${I.gh}</a>
-        <button class="btn gh" data-detail="${esc(a.id)}" aria-label="Details">⋯</button>
       </div>
     </article>`;
   }
@@ -443,7 +450,11 @@
     // sidebar selection states
     $$("[data-cat]").forEach((b) => b.classList.toggle("on", S.cats.includes(b.dataset.cat)));
     $$("[data-plat]").forEach((b) => b.classList.toggle("on", S.plats.includes(b.dataset.plat)));
-    $$("[data-lic]").forEach((i) => { i.checked = S.lics.includes(i.dataset.lic); });
+    $$("[data-lic]").forEach((b) => {
+      if (b.tagName === "INPUT") b.checked = S.lics.includes(b.dataset.lic);
+      else b.classList.toggle("on", S.lics.includes(b.dataset.lic));
+    });
+    $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === S.minStars));
     // hero vs browse
     if (S.view === "new") return;
     const browsing = S.q || S.cats.length || S.plats.length || S.lics.length || S.minStars || S.recent || S.newOnly;
@@ -532,6 +543,7 @@
     $("#star-range").value = S.minStars;
     $("#stars-val").textContent = S.minStars ? fmtN(S.minStars) + "+" : "any";
     $("#recent").checked = S.recent;
+    $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === S.minStars));
   }
 
   // ---------------------------------------------------------- drawer
@@ -542,47 +554,73 @@
     const a = ALL.find((x) => x.id === id);
     if (!a) return;
     const assets = (a.release && a.release.assets) || [];
+    const deltaVal = (a._delta && a._delta > 0) ? `+${fmtN(a._delta)}` : (a._delta ? String(a._delta) : "0");
+    const platVal = (a.platforms || []).join(", ") || "—";
+    const lastPushVal = a.pushedAt ? a.pushedAt.slice(0, 10) : (a.createdAt ? a.createdAt.slice(0, 10) : "—");
+    const licVal = a.license || "—";
+
     const dlBlock = assets.length ? `
-      <div class="dsec"><h4>Direct downloads · ${esc(a.release.tag || "")}</h4>
+      <div class="dsec">
+        <h4>Direct downloads · ${esc(a.release.tag || "")}</h4>
         <div class="dl-trust-note">Downloads are hosted by each project on GitHub. Verify the source and checksum before running.</div>
-        ${assets.slice(0, 14).map((x) => `<a class="asset" href="${safeUrl(x.url)}" target="_blank" rel="noopener noreferrer">
-            <span class="an">${esc(x.name)}</span>
-            <span class="as">${fmtSize(x.size)}</span>
-          </a>`).join("")}
-        ${a.release.page ? `<a class="asset" href="${safeUrl(a.release.page)}" target="_blank" rel="noopener noreferrer"><span class="an" style="font-family:var(--sans)">All releases &amp; checksums</span>${I.ext}</a>` : ""}
+        <div class="asset-list">
+          ${assets.slice(0, 12).map((x) => `<a class="asset" href="${safeUrl(x.url)}" target="_blank" rel="noopener noreferrer">
+              <span class="an">${esc(x.name)}</span>
+              <span class="as">${fmtSize(x.size)}</span>
+            </a>`).join("")}
+        </div>
+        ${a.release.page ? `<a class="asset-all" href="${safeUrl(a.release.page)}" target="_blank" rel="noopener noreferrer">All releases &amp; checksums →</a>` : ""}
       </div>` : `
-      <div class="dsec"><h4>Downloads</h4>
-        <div class="note">No pre-built binaries published in a GitHub release for this project — it may be installed from source, via a package manager, or self-hosted with Docker. Check the repository for the official install steps.</div>
+      <div class="dsec">
+        <h4>Downloads</h4>
+        <div class="note">No pre-built binaries published in a GitHub release for this project — install from source, package manager, or Docker. Check the repository for official install instructions.</div>
       </div>`;
 
     $("#drawer-body").innerHTML = `
-      <div class="dsec"><p class="ddesc">${esc(a.description)}</p></div>
-      <div class="dsec"><div class="stat-row">
-        <div class="stat"><b>${fmtN(a.stars)}</b><span>Stars</span></div>
-        <div class="stat"><b>${fmtN(a.forks)}</b><span>Forks</span></div>
-        <div class="stat"><b>${esc(a.license || "—")}</b><span>License</span></div>
-      </div></div>
-      <div class="dsec"><div style="display:flex;gap:7px;flex-wrap:wrap">
-        <span class="tag cat">${esc(a.category)}</span>
-        ${(a.platforms || []).map((p) => `<span class="tag os">${esc(p)}</span>`).join("")}
-      </div></div>
+      <div class="dsec"><p class="ddesc">${esc(a.description || "No description provided.")}</p></div>
+
+      <div class="dsec">
+        <div class="meta-grid">
+          <div class="meta-cell"><span class="lbl">Stars</span><span class="val">★ ${fmtN(a.stars)}</span></div>
+          <div class="meta-cell"><span class="lbl">Forks</span><span class="val">⑂ ${fmtN(a.forks)}</span></div>
+          <div class="meta-cell"><span class="lbl">Gain Today</span><span class="val ${a._delta > 0 ? "gain" : ""}">${deltaVal}</span></div>
+          <div class="meta-cell"><span class="lbl">License</span><span class="val">${esc(licVal)}</span></div>
+          <div class="meta-cell"><span class="lbl">Platform</span><span class="val" title="${esc(platVal)}">${esc(platVal)}</span></div>
+          <div class="meta-cell"><span class="lbl">Last Updated</span><span class="val">${esc(lastPushVal)}</span></div>
+        </div>
+      </div>
+
+      <div class="dsec">
+        <div class="action-buttons">
+          <a class="btn btn-primary" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer">
+            ${I.gh} View repository
+          </a>
+          ${a.homepage ? `<a class="btn btn-ghost" href="${safeUrl(a.homepage)}" target="_blank" rel="noopener noreferrer">${I.ext} Official website</a>` : ""}
+        </div>
+      </div>
+
       ${dlBlock}
-      <div class="dsec"><h4>Repository</h4>
-        <a class="btn wide" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer">${I.gh} ${esc(a.id)}</a>
-        ${a.homepage ? `<a class="btn wide" style="margin-top:6px" href="${safeUrl(a.homepage)}" target="_blank" rel="noopener noreferrer">${I.ext} Official website</a>` : ""}
-      </div>
-      <div class="dsec"><h4>Activity</h4>
-        <div class="note">Last push ${esc(a.pushedAt || "unknown")} · created ${esc(a.createdAt || "unknown")}${a.language ? ` · primary language ${esc(a.language)}` : ""}</div>
-      </div>
-      ${(a.topics || []).length ? `<div class="dsec"><h4>Topics</h4><div style="display:flex;gap:5px;flex-wrap:wrap">${a.topics.map((t) => `<button class="tag" data-topic="${esc(t)}">${esc(t)}</button>`).join("")}</div></div>` : ""}
+
+      ${(a.topics || []).length ? `
+        <div class="dsec">
+          <h4>Topics</h4>
+          <div class="topic-list">${a.topics.map((t) => `<button class="topic-tag" data-topic="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+        </div>` : ""}
     `;
+
     $("#drawer-head").innerHTML = `
-      <div class="drawer-logo" aria-hidden="true"><span>${esc((a.name[0] || "?").toUpperCase())}</span><img src="${safeUrl(a.avatar)}" alt="" onerror="this.remove()"></div>
-      <div style="min-width:0">
-        <div class="card-name" style="font-size:15px">${esc(a.name)}</div>
-        <div class="card-owner">${esc(a.owner)}</div>
+      <div class="drawer-header-content">
+        <div class="drawer-logo" aria-hidden="true">
+          <span>${esc((a.name[0] || "?").toUpperCase())}</span>
+          <img src="${safeUrl(a.avatar)}" alt="" onerror="this.remove()">
+        </div>
+        <div class="drawer-title-row">
+          <h2 class="drawer-title">${esc(a.name)}</h2>
+          <span class="drawer-owner">${esc(a.owner)}</span>
+        </div>
       </div>
-      <button class="x" id="drawer-x" aria-label="Close">${I.x}</button>`;
+      <button class="modal-close" id="drawer-x" aria-label="Close dialog">×</button>`;
+
     $("#drawer-x").onclick = closeDrawer;
     drawer.classList.add("on"); scrim.classList.add("on"); drawerOpen = true;
     document.body.style.overflow = "hidden";
@@ -622,7 +660,39 @@
       S.q = ""; qEl.value = ""; qwrap.classList.remove("has-val");
       S.cats = []; S.plats = []; S.lics = []; S.minStars = 0; S.recent = false; S.newOnly = false;
       $("#star-range").value = 0; $("#stars-val").textContent = "any"; $("#recent").checked = false;
+      $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === 0));
       refresh(); return;
+    }
+    const sp = e.target.closest("[data-stars]");
+    if (sp) {
+      const v = +sp.dataset.stars;
+      S.minStars = v;
+      $("#star-range").value = v;
+      $("#stars-val").textContent = v ? fmtN(v) + "+" : "any";
+      $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === v));
+      refresh(); return;
+    }
+    const licBtn = e.target.closest("[data-lic]");
+    if (licBtn && licBtn.tagName === "BUTTON") {
+      const v = licBtn.dataset.lic;
+      S.lics = S.lics.includes(v) ? S.lics.filter((x) => x !== v) : S.lics.concat(v);
+      refresh(); return;
+    }
+    const btnGrid = e.target.closest("#view-grid");
+    if (btnGrid) {
+      $("#grid").classList.remove("list-view");
+      if ($("#view-grid")) $("#view-grid").classList.add("on");
+      if ($("#view-list")) $("#view-list").classList.remove("on");
+      try { localStorage.setItem("sourceshelf.layout", "grid"); } catch (err) {}
+      return;
+    }
+    const btnList = e.target.closest("#view-list");
+    if (btnList) {
+      $("#grid").classList.add("list-view");
+      if ($("#view-list")) $("#view-list").classList.add("on");
+      if ($("#view-grid")) $("#view-grid").classList.remove("on");
+      try { localStorage.setItem("sourceshelf.layout", "list"); } catch (err) {}
+      return;
     }
     const rm = e.target.closest("[data-rm]");
     if (rm) {
@@ -632,7 +702,10 @@
       if (kind === "lic") S.lics = S.lics.filter((x) => x !== val);
       if (kind === "recent") { S.recent = false; $("#recent").checked = false; }
       if (kind === "new") { S.newOnly = false; }
-      if (kind === "stars") { S.minStars = 0; $("#star-range").value = 0; $("#stars-val").textContent = "any"; }
+      if (kind === "stars") {
+        S.minStars = 0; $("#star-range").value = 0; $("#stars-val").textContent = "any";
+        $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === 0));
+      }
       refresh(); return;
     }
     const det = e.target.closest("[data-detail]");
@@ -676,7 +749,7 @@
 
   document.addEventListener("change", (e) => {
     const lic = e.target.closest("[data-lic]");
-    if (lic) {
+    if (lic && lic.tagName === "INPUT") {
       const v = lic.dataset.lic;
       S.lics = lic.checked ? S.lics.concat(v) : S.lics.filter((x) => x !== v);
       refresh(); return;
@@ -690,6 +763,7 @@
     const v = +e.target.value;
     $("#stars-val").textContent = v ? fmtN(v) + "+" : "any";
     S.minStars = v;
+    $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === v));
     clearTimeout(starTimer);
     starTimer = setTimeout(refresh, 120);
   });
@@ -1121,5 +1195,13 @@ ${note || "None"}
   updateChrome();
   setView(S.view, { silent: true, noScroll: true });
   if (S.view === "all") renderStrip();
+  try {
+    const savedLayout = localStorage.getItem("sourceshelf.layout");
+    if (savedLayout === "list") {
+      $("#grid").classList.add("list-view");
+      if ($("#view-list")) $("#view-list").classList.add("on");
+      if ($("#view-grid")) $("#view-grid").classList.remove("on");
+    }
+  } catch (err) {}
   liveRefresh();
 })();
