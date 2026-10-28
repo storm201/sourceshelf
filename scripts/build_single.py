@@ -221,6 +221,8 @@ def build_html() -> tuple[str, dict]:
 
     payload = data.split("=", 1)[1].rstrip().rstrip(";")
     meta = json.loads(payload)["meta"]
+    count_fmt = f"{meta.get('count', 0):,}"
+    html = re.sub(r'<b id="total">[^<]*</b>', f'<b id="total">{count_fmt}</b>', html)
 
     html = html.replace('<link rel="stylesheet" href="assets/app.css">',
                         f"<style>\n{css}\n</style>")

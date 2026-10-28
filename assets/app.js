@@ -18,6 +18,7 @@
     dl: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/></svg>',
     x: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     ext: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>',
+    bm: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
   };
 
   const OS_ICON = {
@@ -73,7 +74,149 @@
 
   // ---------------------------------------------------------- state
   const S = { q: "", cats: [], plats: [], lics: [], minStars: 0, sort: "stars",
-            recent: false, newOnly: false, view: "all" };
+            recent: false, newOnly: false, savedOnly: false, view: "all" };
+  let activeAppId = null;
+  let drawerOpen = false;
+
+  let suggestModalOpen = false;
+
+  function updateModalLock() {
+    document.body.style.overflow = (drawerOpen || suggestModalOpen) ? "hidden" : "";
+  }
+
+  function loadSaved() {
+    try {
+      const raw = localStorage.getItem("sourceshelf_saved_repos");
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  const SAVED = new Set(loadSaved());
+
+  function saveSaved() {
+    try {
+      localStorage.setItem("sourceshelf_saved_repos", JSON.stringify([...SAVED]));
+    } catch (e) {}
+  }
+
+  function updateSavedUI() {
+    const cnt = $("#saved-count");
+    if (cnt) cnt.textContent = SAVED.size;
+    const btn = $("#btn-saved");
+    if (btn) btn.classList.toggle("on", S.savedOnly);
+    $$(".card-bookmark").forEach((b) => {
+      b.classList.toggle("on", SAVED.has(b.dataset.save));
+    });
+  }
+
+  function getSavedApps() {
+    return ALL.filter((a) => SAVED.has(a.id));
+  }
+
+  function exportMarkdown() {
+    const list = getSavedApps();
+    return list.map((a) => `- [${a.id}](${a.url}) — ★ ${a.stars.toLocaleString()} — ${a.description || ""}`).join("\n");
+  }
+
+  function triggerDownload(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  }
+
+  function parseSearchQuery(qStr) {
+    const rawTokens = qStr.trim().toLowerCase().match(/[^\s"]+|"[^"]*"/g) || [];
+    const preds = [];
+    const textTokens = [];
+
+    for (let tok of rawTokens) {
+      if (tok.startsWith('"') && tok.endsWith('"')) tok = tok.slice(1, -1);
+      if (tok.startsWith("lang:")) {
+        const v = tok.slice(5).trim();
+        if (v) preds.push((a) => a._lang === v);
+      } else if (tok.startsWith("license:")) {
+        const v = tok.slice(8).trim();
+        if (v) preds.push((a) => a._license === v);
+      } else if (tok.startsWith("cat:")) {
+        const v = tok.slice(4).trim();
+        if (v) preds.push((a) => a._cat === v);
+      } else if (tok.startsWith("platform:")) {
+        const v = tok.slice(9).trim();
+        if (v) preds.push((a) => a._platforms.includes(v));
+      } else if (tok.startsWith("stars:>")) {
+        const v = parseFloat(tok.slice(7));
+        if (!isNaN(v)) preds.push((a) => a.stars > v);
+      } else if (tok) {
+        textTokens.push(tok);
+      }
+    }
+    return { preds, textTokens };
+  }
+
+  function appMatchesTokens(a, tokens) {
+    for (const t of tokens) {
+      const match = a._name.includes(t) ||
+                    a._desc.includes(t) ||
+                    a._cat.includes(t) ||
+                    a._topics.some((tp) => tp.includes(t)) ||
+                    a._lang.includes(t) ||
+                    a._license.includes(t) ||
+                    a._platforms.some((p) => p.includes(t)) ||
+                    a._owner.includes(t);
+      if (!match) return false;
+    }
+    return true;
+  }
+
+  function calcScore(a, cleanQuery, tokens) {
+    let score = 0;
+    if (cleanQuery) {
+      if (a._name === cleanQuery) {
+        score += 100;
+      } else if (a._name.startsWith(cleanQuery)) {
+        score += 60;
+      } else if (a._name.includes(cleanQuery)) {
+        score += 40;
+      } else {
+        for (const t of tokens) {
+          if (a._name === t) { score += 60; break; }
+          else if (a._name.startsWith(t)) { score += 40; break; }
+          else if (a._name.includes(t)) { score += 20; break; }
+        }
+      }
+      if (a._cat.includes(cleanQuery) || a._topics.some((tp) => tp.includes(cleanQuery)) ||
+          tokens.some((t) => a._cat.includes(t) || a._topics.some((tp) => tp.includes(t)))) {
+        score += 25;
+      }
+      if (a._desc.includes(cleanQuery) || tokens.some((t) => a._desc.includes(t))) {
+        score += 10;
+      }
+    }
+    return score;
+  }
+
+  function indexApp(a) {
+    a.avatar = "https://github.com/" + a.owner + ".png?size=96";
+
+    a._name = (a.name || "").toLowerCase();
+    a._desc = (a.description || "").toLowerCase();
+    a._cat = (a.category || "").toLowerCase();
+    a._topics = (a.topics || []).map((t) => String(t).toLowerCase());
+    a._lang = (a.language || "").toLowerCase();
+    a._license = (a.license || "").toLowerCase();
+    a._platforms = (a.platforms || []).map((p) => String(p).toLowerCase());
+    a._owner = (a.owner || "").toLowerCase();
+    a._dl = a.release && a.release.assets && a.release.assets.length ? a.release : null;
+
+    a._trend = a.stars / Math.max(a.ageDays || 365, 60);
+    a._delta = a.starsDelta || 0;
+  }
   const PAGE = 48;
   let filtered = [];
   let rendered = 0;
@@ -96,12 +239,13 @@
   const fmtSize = (b) => !b ? "" : b > 1048576 ? (b / 1048576).toFixed(b > 10485760 ? 0 : 1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 
   // ---------------------------------------------------------- index
-  // Pre-compute one lowercase blob per app so search is a single indexOf pass.
-  for (const a of ALL) {
-    a.avatar = "https://github.com/" + a.owner + ".png?size=96";
-    a._s = (a.name + " " + a.owner + " " + a.description + " " + (a.topics || []).join(" ") +
-      " " + a.category + " " + (a.platforms || []).join(" ") + " " + (a.license || "")).toLowerCase();
-    a._dl = a.release && a.release.assets && a.release.assets.length ? a.release : null;
+  // Pre-compute normalized fields for fast tokenized/operator search
+  for (const a of ALL) indexApp(a);
+  if (false) {
+
+    /* replaced */
+
+
     // stars gained per day since the repo was created — a real "hot" signal
     a._trend = a.stars / Math.max(a.ageDays || 365, 60);
     a._delta = a.starsDelta || 0;
@@ -160,6 +304,7 @@
           ${gainBadge}
         </div>
         <span class="card-stars">★ ${fmtN(a.stars)}</span>
+        <button class="card-bookmark ${SAVED.has(a.id) ? "on" : ""}" data-save="${esc(a.id)}" data-stop="1" title="${SAVED.has(a.id) ? "Remove from shelf" : "Save to shelf"}" aria-label="Save app">${I.bm}</button>
       </div>
       <p class="card-desc">${esc(a.description || "")}</p>
       <div class="card-f">
@@ -246,6 +391,7 @@
   function facets() {
     const cats = new Map(), plats = new Map(), lics = new Map();
     for (const a of ALL) {
+
       cats.set(a.category, (cats.get(a.category) || 0) + 1);
       for (const p of a.platforms || []) plats.set(p, (plats.get(p) || 0) + 1);
       if (a.license) lics.set(a.license, (lics.get(a.license) || 0) + 1);
@@ -306,8 +452,9 @@
 
   // ---------------------------------------------------------- filter
   function apply() {
-    const q = S.q.trim().toLowerCase();
-    const qs = q ? q.split(/\s+/).filter(Boolean) : null;
+    const { preds, textTokens } = parseSearchQuery(S.q);
+    const cleanQuery = textTokens.join(" ");
+
     const out = [];
     for (let i = 0; i < ALL.length; i++) {
       const a = ALL[i];
@@ -316,19 +463,31 @@
       if (S.lics.length && !S.lics.includes(a.license)) continue;
       if (S.recent && (a.ageDays || 9999) > 180) continue;
       if (S.newOnly && !a.isNew) continue;
+      if (S.savedOnly && !SAVED.has(a.id)) continue;
       if (S.plats.length) {
         let ok = false;
         for (const p of S.plats) if (a.platforms.indexOf(p) > -1) { ok = true; break; }
         if (!ok) continue;
       }
-      if (qs) {
+      let passedPreds = true;
+      for (const pred of preds) { if (!pred(a)) { passedPreds = false; break; } }
+      if (!passedPreds) continue;
+      if (textTokens.length) {
+        if (!appMatchesTokens(a, textTokens)) continue;
+        a._score = calcScore(a, cleanQuery, textTokens);
+      } else { a._score = 0; }
+      if (false) {
         let ok = true;
         for (let k = 0; k < qs.length; k++) if (a._s.indexOf(qs[k]) < 0) { ok = false; break; }
         if (!ok) continue;
       }
       out.push(a);
     }
-    sortInPlace(out);
+    if (textTokens.length) {
+      out.sort((a, b) => (b._score - a._score) || (b.stars - a.stars));
+    } else {
+      sortInPlace(out);
+    }
     filtered = out;
     return out;
   }
@@ -369,6 +528,7 @@
           ${gainBadge}
         </div>
         <span class="card-stars">★ ${fmtN(a.stars)}</span>
+        <button class="card-bookmark ${SAVED.has(a.id) ? "on" : ""}" data-save="${esc(a.id)}" data-stop="1" title="${SAVED.has(a.id) ? "Remove from shelf" : "Save to shelf"}" aria-label="Save app">${I.bm}</button>
       </div>
       <p class="card-desc">${esc(a.description || "")}</p>
       <div class="card-f">
@@ -439,6 +599,7 @@
     if (S.recent) pills.push(["Updated recently", "recent", ""]);
     if (S.newOnly) pills.push(["Added today", "new", ""]);
     if (S.minStars > 0) pills.push([`${fmtN(S.minStars)}+ stars`, "stars", ""]);
+    if (S.savedOnly) pills.push(["Saved apps", "saved", ""]);
     const bar = $("#active");
     if (!pills.length) { bar.classList.remove("show"); bar.innerHTML = ""; }
     else {
@@ -455,9 +616,24 @@
       else b.classList.toggle("on", S.lics.includes(b.dataset.lic));
     });
     $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === S.minStars));
+    if (true) {
+      if (typeof p !== "undefined") {
+        const appParam = p.get("app");
+        if (appParam) {
+          const match = ALL.find((x) => x.id.toLowerCase() === appParam.toLowerCase());
+          if (match) setTimeout(() => openDetail(match.id), 50);
+        }
+      }
+    updateSavedUI();
+
+
+
+
+    }
     // hero vs browse
     if (S.view === "new") return;
-    const browsing = S.q || S.cats.length || S.plats.length || S.lics.length || S.minStars || S.recent || S.newOnly;
+    const browsing = S.q || S.cats.length || S.plats.length || S.lics.length || S.minStars || S.recent || S.newOnly || S.savedOnly;
+    updateSavedUI();
     const tiles = $("#tiles-wrap");
     if (tiles) tiles.style.display = browsing ? "none" : "";
     const strip = $("#newstrip");
@@ -516,12 +692,14 @@
       const p = new URLSearchParams();
       if (S.q) p.set("q", S.q);
       if (S.cats.length) p.set("cat", S.cats.join(","));
-      if (S.plats.length) p.set("plat", S.plats.join(","));
-      if (S.lics.length) p.set("lic", S.lics.join(","));
-      if (S.minStars) p.set("stars", S.minStars);
+      if (S.plats.length) p.set("platform", S.plats.join(","));
+      if (S.lics.length) p.set("license", S.lics.join(","));
+      if (S.minStars) p.set("minStars", S.minStars);
       if (S.sort !== "stars") p.set("sort", S.sort);
+      if (S.savedOnly) p.set("saved", "1");
       if (S.recent) p.set("recent", "1");
       if (S.view === "new") p.set("view", "new");
+      if (activeAppId) p.set("app", activeAppId);
       const qs = p.toString();
       try { history.replaceState(null, "", qs ? "?" + qs : location.pathname); } catch (e) { }
     }, 250);
@@ -531,10 +709,11 @@
     const p = new URLSearchParams(location.search);
     if (p.get("q")) S.q = p.get("q");
     if (p.get("cat")) S.cats = p.get("cat").split(",").filter(Boolean);
-    if (p.get("plat")) S.plats = p.get("plat").split(",").filter(Boolean);
-    if (p.get("lic")) S.lics = p.get("lic").split(",").filter(Boolean);
-    if (p.get("stars")) S.minStars = +p.get("stars") || 0;
+    const plat = p.get("platform") || p.get("plat"); if (plat) S.plats = plat.split(",").filter(Boolean);
+    const lic = p.get("license") || p.get("lic"); if (lic) S.lics = lic.split(",").filter(Boolean);
+    const stars = p.get("minStars") || p.get("stars"); if (stars) S.minStars = +stars || 0;
     if (p.get("sort")) S.sort = p.get("sort");
+    if (p.get("saved") === "1" || p.get("saved") === "true") S.savedOnly = true;
     if (p.get("recent")) S.recent = true;
     if (p.get("view") === "new") S.view = "new";
     $("#q").value = S.q;
@@ -544,15 +723,30 @@
     $("#stars-val").textContent = S.minStars ? fmtN(S.minStars) + "+" : "any";
     $("#recent").checked = S.recent;
     $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === S.minStars));
+    if (true) {
+      if (typeof p !== "undefined") {
+        const appParam = p.get("app");
+        if (appParam) {
+          const match = ALL.find((x) => x.id.toLowerCase() === appParam.toLowerCase());
+          if (match) setTimeout(() => openDetail(match.id), 50);
+        }
+      }
+    updateSavedUI();
+
+
+
+
+    }
   }
 
   // ---------------------------------------------------------- drawer
   const drawer = $("#drawer"), scrim = $("#scrim");
-  let drawerOpen = false;
+
 
   function openDetail(id) {
     const a = ALL.find((x) => x.id === id);
     if (!a) return;
+    activeAppId = a.id;
     const assets = (a.release && a.release.assets) || [];
     const deltaVal = (a._delta && a._delta > 0) ? `+${fmtN(a._delta)}` : (a._delta ? String(a._delta) : "0");
     const platVal = (a.platforms || []).join(", ") || "—";
@@ -592,6 +786,7 @@
 
       <div class="dsec">
         <div class="action-buttons">
+          <button class="btn btn-ghost btn-save ${SAVED.has(a.id) ? "on" : ""}" data-save="${esc(a.id)}" type="button">${I.bm} <span>${SAVED.has(a.id) ? "Saved to shelf" : "Save to shelf"}</span></button>
           <a class="btn btn-primary" href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer">
             ${I.gh} View repository
           </a>
@@ -623,11 +818,14 @@
 
     $("#drawer-x").onclick = closeDrawer;
     drawer.classList.add("on"); scrim.classList.add("on"); drawerOpen = true;
-    document.body.style.overflow = "hidden";
+    updateModalLock();
+    syncURL();
   }
   function closeDrawer() {
     drawer.classList.remove("on"); scrim.classList.remove("on"); drawerOpen = false;
-    document.body.style.overflow = "";
+    activeAppId = null;
+    updateModalLock();
+    syncURL();
   }
 
   // ---------------------------------------------------------- events
@@ -649,16 +847,78 @@
       }
     }
     else if (e.key === "Escape") {
-      if (drawerOpen) closeDrawer();
+      const expMenu = $("#export-menu");
+      if (expMenu && !expMenu.hidden) { expMenu.hidden = true; const b = $("#btn-export"); if (b) b.setAttribute("aria-expanded", "false"); }
+      else if (suggestModalOpen && typeof window.__closeSuggestModal === "function") window.__closeSuggestModal();
+      else if (drawerOpen) closeDrawer();
       else if (document.activeElement === qEl) { qEl.value = ""; S.q = ""; qwrap.classList.remove("has-val"); refresh(); qEl.blur(); }
     }
   });
 
   document.addEventListener("click", (e) => {
+    const saveBtn = e.target.closest("[data-save]");
+    if (saveBtn) {
+      e.preventDefault(); e.stopPropagation();
+      const id = saveBtn.dataset.save;
+      if (SAVED.has(id)) SAVED.delete(id); else SAVED.add(id);
+      saveSaved();
+      updateSavedUI();
+      const drawerSave = $("#drawer .btn-save");
+      if (drawerSave && activeAppId === id) {
+        const isSaved = SAVED.has(id);
+        drawerSave.classList.toggle("on", isSaved);
+        const span = drawerSave.querySelector("span");
+        if (span) span.textContent = isSaved ? "Saved to shelf" : "Save to shelf";
+      }
+      if (S.savedOnly) refresh();
+      return;
+    }
+    const savedPill = e.target.closest("#btn-saved");
+    if (savedPill) {
+      S.savedOnly = !S.savedOnly;
+      refresh();
+      return;
+    }
+    const expBtn = e.target.closest("#btn-export");
+    const expMenu = $("#export-menu");
+    if (expBtn && expMenu) {
+      expMenu.hidden = !expMenu.hidden;
+      expBtn.setAttribute("aria-expanded", String(!expMenu.hidden));
+      return;
+    }
+    if (expMenu && !expMenu.hidden && !e.target.closest("#shelf-export-wrap")) {
+      expMenu.hidden = true;
+      const b = $("#btn-export");
+      if (b) b.setAttribute("aria-expanded", "false");
+    }
+    if (e.target.id === "export-md-copy") {
+      const md = exportMarkdown();
+      if (!md) { alert("Your shelf is empty! Save some apps first."); return; }
+      navigator.clipboard.writeText(md).then(() => {
+        const prev = e.target.textContent;
+        e.target.textContent = "Copied!";
+        setTimeout(() => { e.target.textContent = prev; if (expMenu) expMenu.hidden = true; }, 1200);
+      });
+      return;
+    }
+    if (e.target.id === "export-md-dl") {
+      const md = exportMarkdown();
+      if (!md) { alert("Your shelf is empty! Save some apps first."); return; }
+      triggerDownload(md, "sourceshelf-saved.md", "text/markdown");
+      if (expMenu) expMenu.hidden = true;
+      return;
+    }
+    if (e.target.id === "export-json-dl") {
+      const list = getSavedApps();
+      if (!list.length) { alert("Your shelf is empty! Save some apps first."); return; }
+      triggerDownload(JSON.stringify(list, null, 2), "sourceshelf-saved.json", "application/json");
+      if (expMenu) expMenu.hidden = true;
+      return;
+    }
     const t = e.target.closest("[data-cat],[data-plat],[data-lic],[data-detail],[data-rm],[data-topic],#clear-all,#drawer-x,.scrimbutton");
     if (e.target.id === "clear-all") {
       S.q = ""; qEl.value = ""; qwrap.classList.remove("has-val");
-      S.cats = []; S.plats = []; S.lics = []; S.minStars = 0; S.recent = false; S.newOnly = false;
+      S.cats = []; S.plats = []; S.lics = []; S.minStars = 0; S.recent = false; S.newOnly = false; S.savedOnly = false;
       $("#star-range").value = 0; $("#stars-val").textContent = "any"; $("#recent").checked = false;
       $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === 0));
       refresh(); return;
@@ -702,6 +962,7 @@
       if (kind === "lic") S.lics = S.lics.filter((x) => x !== val);
       if (kind === "recent") { S.recent = false; $("#recent").checked = false; }
       if (kind === "new") { S.newOnly = false; }
+      if (kind === "saved") { S.savedOnly = false; }
       if (kind === "stars") {
         S.minStars = 0; $("#star-range").value = 0; $("#stars-val").textContent = "any";
         $$(".star-pill").forEach((b) => b.classList.toggle("on", +b.dataset.stars === 0));
@@ -913,8 +1174,8 @@
           avatar: "https://github.com/" + r.owner + ".png?size=96",
           _dl: null, _trend: r.stars / 60, _delta: 0,
         };
-        a._s = (a.name + " " + a.owner + " " + a.description + " " + (a.topics || []).join(" ") +
-          " " + a.category + " " + (a.platforms || []).join(" ") + " " + (a.license || "")).toLowerCase();
+        /* replaced */
+        indexApp(a);
         ALL.unshift(a);
         BY_ID.set(a.id, a);
         added = true;
@@ -993,18 +1254,23 @@
         modal.classList.add("on");
         if (scrim) scrim.classList.add("on");
       });
+      suggestModalOpen = true;
+      updateModalLock();
       repoInput.focus();
     }
 
     function closeModal() {
       modal.classList.remove("on");
       if (scrim) scrim.classList.remove("on");
+      suggestModalOpen = false;
+      updateModalLock();
       setTimeout(() => {
         modal.hidden = true;
         resetForm();
       }, 200);
     }
 
+    window.__closeSuggestModal = closeModal;
     function resetForm() {
       repoInput.value = "";
       noteInput.value = "";
@@ -1039,6 +1305,44 @@
         return;
       }
 
+      // 1. Instant local duplicate check
+      const existing = ALL.find((a) => a.id.toLowerCase() === parsed.toLowerCase() ||
+        (a.owner.toLowerCase() + "/" + a.name.toLowerCase()) === parsed.toLowerCase());
+      if (existing) {
+        spinner.hidden = true;
+        hintEl.textContent = "Already on the shelf";
+        hintEl.className = "field-hint";
+        previewContainer.innerHTML = `
+          <div class="duplicate-box">
+            <p><b>${esc(existing.name)}</b> (<code>${esc(existing.id)}</code>) is already on SourceShelf!</p>
+            <button type="button" class="btn btn-primary" id="btn-open-dup">Open app details →</button>
+          </div>
+        `;
+        previewWrap.hidden = false;
+        submitBtn.disabled = true;
+        const dupBtn = $("#btn-open-dup");
+        if (dupBtn) {
+          dupBtn.onclick = () => {
+            closeModal();
+            openDetail(existing.id);
+          };
+        }
+        return;
+      }
+
+      // 2. SessionStorage cache check
+      const cacheKey = "sourceshelf_gh_" + parsed.toLowerCase();
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const data = JSON.parse(cached);
+          spinner.hidden = true;
+          renderRepoPreview(data);
+          return;
+        }
+      } catch (e) {}
+
+      // 3. Live GitHub lookup with rate-limit protection
       spinner.hidden = false;
       hintEl.textContent = "Looking up repository on GitHub…";
       hintEl.className = "field-hint";
@@ -1056,54 +1360,63 @@
         if (!res.ok) {
           if (res.status === 404) {
             hintEl.textContent = "Repository not found on GitHub. Check spelling or visibility.";
+            submitBtn.disabled = true;
+          } else if (res.status === 403) {
+            hintEl.textContent = "GitHub API rate limit exceeded. You can still submit via GitHub Issue.";
+            submitBtn.disabled = false;
           } else {
             hintEl.textContent = `GitHub responded with error HTTP ${res.status}.`;
+            submitBtn.disabled = false;
           }
           hintEl.className = "field-hint error";
           previewWrap.hidden = true;
-          submitBtn.disabled = true;
           currentRepoData = null;
           return;
         }
 
         const data = await res.json();
-        currentRepoData = data;
-        hintEl.textContent = "✓ Repository found!";
-        hintEl.className = "field-hint success";
-
-        const stars = data.stargazers_count != null ? fmtN(data.stargazers_count) : "0";
-        const lic = (data.license && data.license.spdx_id) || "None";
-        const lang = data.language || "Open Source";
-        const avatar = data.owner && data.owner.avatar_url ? data.owner.avatar_url : "";
-
-        previewContainer.innerHTML = `
-          <div class="preview-card">
-            ${avatar ? `<img class="preview-avatar" src="${safeUrl(avatar)}" alt="${esc(data.owner.login)}" onerror="this.remove()">` : ""}
-            <div class="preview-info">
-              <div class="preview-title-row">
-                <span class="preview-name">${esc(data.full_name)}</span>
-                <span class="preview-stars">★ ${stars}</span>
-              </div>
-              <p class="preview-desc">${esc(data.description || "No description provided.")}</p>
-              <div class="preview-meta">
-                <span>Category: <b>${esc(catSelect.value)}</b></span>
-                <span>Language: <b>${esc(lang)}</b></span>
-                <span>License: <b>${esc(lic)}</b></span>
-              </div>
-            </div>
-          </div>
-        `;
-        previewWrap.hidden = false;
-        submitBtn.disabled = false;
+        try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch (e) {}
+        renderRepoPreview(data);
       } catch (err) {
         if (err.name === "AbortError") return;
         spinner.hidden = true;
         hintEl.textContent = "Failed to connect to GitHub API (" + err.message + ")";
         hintEl.className = "field-hint error";
         previewWrap.hidden = true;
-        submitBtn.disabled = true;
+        submitBtn.disabled = false;
         currentRepoData = null;
       }
+    }
+
+    function renderRepoPreview(data) {
+      currentRepoData = data;
+      hintEl.textContent = "✓ Repository found!";
+      hintEl.className = "field-hint success";
+
+      const stars = data.stargazers_count != null ? fmtN(data.stargazers_count) : "0";
+      const lic = (data.license && data.license.spdx_id) || "None";
+      const lang = data.language || "Open Source";
+      const avatar = data.owner && data.owner.avatar_url ? data.owner.avatar_url : "";
+
+      previewContainer.innerHTML = `
+        <div class="preview-card">
+          ${avatar ? `<img class="preview-avatar" src="${safeUrl(avatar)}" alt="${esc(data.owner.login)}" onerror="this.remove()">` : ""}
+          <div class="preview-info">
+            <div class="preview-title-row">
+              <span class="preview-name">${esc(data.full_name)}</span>
+              <span class="preview-stars">★ ${stars}</span>
+            </div>
+            <p class="preview-desc">${esc(data.description || "No description provided.")}</p>
+            <div class="preview-meta">
+              <span>Category: <b>${esc(catSelect.value)}</b></span>
+              <span>Language: <b>${esc(lang)}</b></span>
+              <span>License: <b>${esc(lic)}</b></span>
+            </div>
+          </div>
+        </div>
+      `;
+      previewWrap.hidden = false;
+      submitBtn.disabled = false;
     }
 
     repoInput.addEventListener("input", () => {
@@ -1113,20 +1426,22 @@
         checkRepo(null);
         return;
       }
-      debounceTimer = setTimeout(() => checkRepo(parsed), 350);
+      debounceTimer = setTimeout(() => checkRepo(parsed), 500);
     });
 
     catSelect.addEventListener("change", () => {
-      if (currentRepoData) checkRepo(parseRepo(repoInput.value));
+      if (currentRepoData) renderRepoPreview(currentRepoData);
     });
 
     submitBtn.addEventListener("click", () => {
-      if (!currentRepoData) return;
-      const name = currentRepoData.name;
+      const rawVal = repoInput.value.trim();
+      const parsed = parseRepo(rawVal) || rawVal;
+      if (!parsed) return;
       const cat = catSelect.value;
       const note = noteInput.value.trim();
-      const stars = currentRepoData.stargazers_count || 0;
-      const url = currentRepoData.html_url;
+      const name = (currentRepoData && currentRepoData.name) || parsed;
+      const stars = (currentRepoData && currentRepoData.stargazers_count) || 0;
+      const url = (currentRepoData && currentRepoData.html_url) || (parsed.startsWith("http") ? parsed : `https://github.com/${parsed}`);
 
       const title = encodeURIComponent(`App Suggestion: ${name}`);
       const body = encodeURIComponent(
@@ -1138,9 +1453,9 @@ ${cat}
 
 ### App Details
 - **Stars:** ${stars.toLocaleString()}
-- **Description:** ${currentRepoData.description || "None"}
-- **License:** ${currentRepoData.license?.spdx_id || "None"}
-- **Language:** ${currentRepoData.language || "None"}
+- **Description:** ${(currentRepoData && currentRepoData.description) || "None"}
+- **License:** ${(currentRepoData && currentRepoData.license?.spdx_id) || "None"}
+- **Language:** ${(currentRepoData && currentRepoData.language) || "None"}
 
 ### Note from Submitter
 ${note || "None"}
@@ -1203,5 +1518,21 @@ ${note || "None"}
       if ($("#view-grid")) $("#view-grid").classList.remove("on");
     }
   } catch (err) {}
+  (function cacheSnapshot() {
+    if (!window.indexedDB || !META.generatedAt) return;
+    try {
+      const key = "snapshot_" + META.generatedAt;
+      const req = indexedDB.open("sourceshelf_cache", 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("snapshots")) db.createObjectStore("snapshots");
+      };
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction("snapshots", "readwrite");
+        tx.objectStore("snapshots").put({ meta: META, count: ALL.length, cachedAt: Date.now() }, key);
+      };
+    } catch (e) {}
+  })();
   liveRefresh();
 })();
