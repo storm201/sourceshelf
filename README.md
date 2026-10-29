@@ -1,12 +1,12 @@
 # 📡 SourceShelf
 
 <!-- CATALOG_STATS_START -->
-[![Catalog Size](https://img.shields.io/badge/catalog-1%2C824%20apps-blue?style=flat-square&logo=github)](data/apps.json)
+[![Catalog Size](https://img.shields.io/badge/catalog-1%2C827%20apps-blue?style=flat-square&logo=github)](data/apps.json)
 [![Categories](https://img.shields.io/badge/categories-23-purple?style=flat-square)](scripts/taxonomy.py)
 [![Platforms](https://img.shields.io/badge/platforms-10-success?style=flat-square)](scripts/taxonomy.py)
-[![Direct Downloads](https://img.shields.io/badge/direct%20downloads-752-orange?style=flat-square)](#direct-downloads-vs-get-app)
+[![Direct Downloads](https://img.shields.io/badge/direct%20downloads-753-orange?style=flat-square)](#direct-downloads-vs-get-app)
 
-> **Current catalog: 1,824 apps · 23 categories · 10 platforms · 752 with direct
+> **Current catalog: 1,827 apps · 23 categories · 10 platforms · 753 with direct
 > download links**, crawled live from the GitHub API.
 <!-- CATALOG_STATS_END -->
 >
@@ -81,7 +81,7 @@ appeared since yesterday — so history has to be stored somewhere.
 Two things are deliberate:
 
 - **Seeding run claims nothing.** The first crawl records discovery dates for
-  every app but marks none as new. Otherwise day one would announce "1,824 new apps today", which is noise, not news.
+  every app but marks none as new. Otherwise day one would announce "1,827 new apps today", which is noise, not news.
 - **`first_seen` never moves.** A daily upsert overwrites stars and descriptions
   but preserves the original discovery date, so an app can't drift into
   "new" twice.
