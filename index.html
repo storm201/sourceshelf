@@ -1,307 +1,351 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SourceShelf — every open-source app on one shelf</title>
-<meta name="description" content="SourceShelf — a fast, filterable shelf of popular open-source desktop, mobile, web and self-hosted apps. Crawled from GitHub every night, with direct download links.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://github.com https://avatars.githubusercontent.com data:; connect-src 'self' https://*.supabase.co https://api.github.com; base-uri 'none'; form-action 'none';">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script>
-  (function() {
-    try {
-      var s = localStorage.getItem("sourceshelf.theme");
-      var d = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-      var t = s || (d ? "dark" : "light");
-      document.documentElement.setAttribute("data-theme", t);
-    } catch(e) {}
-  })();
-</script>
-<link rel="stylesheet" href="assets/app.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230B0B0C%27%2F%3E%3Crect%20x%3D%275%27%20y%3D%279%27%20width%3D%274.4%27%20height%3D%2712%27%20rx%3D%271.4%27%20fill%3D%27%2310B981%27%2F%3E%3Crect%20x%3D%2710.6%27%20y%3D%276%27%20width%3D%274.4%27%20height%3D%2715%27%20rx%3D%271.4%27%20fill%3D%27%23F4F4F5%27%2F%3E%3Crect%20x%3D%2716.2%27%20y%3D%2711%27%20width%3D%274.4%27%20height%3D%2710%27%20rx%3D%271.4%27%20fill%3D%27%23A1A1AA%27%2F%3E%3Crect%20x%3D%2721.8%27%20y%3D%278%27%20width%3D%274.4%27%20height%3D%2713%27%20rx%3D%271.4%27%20fill%3D%27%2310B981%27%20fill-opacity%3D%27.45%27%2F%3E%3Cpath%20d%3D%27M4%2023h24%27%20stroke%3D%27%2334343A%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-site-verification" content="oHn7AA80GLxAbINvCTKeguJN1VhlFp5RYUANBvh9wN4" />
+  <title>SourceShelf — every open-source app on one shelf</title>
+  <meta name="description"
+    content="SourceShelf — a fast, filterable shelf of popular open-source desktop, mobile, web and self-hosted apps. Crawled from GitHub every night, with direct download links.">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://github.com https://avatars.githubusercontent.com data:; connect-src 'self' https://*.supabase.co https://api.github.com; base-uri 'none'; form-action 'none';">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script>
+    (function () {
+      try {
+        var s = localStorage.getItem("sourceshelf.theme");
+        var d = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var t = s || (d ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) { }
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/app.css">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230B0B0C%27%2F%3E%3Crect%20x%3D%275%27%20y%3D%279%27%20width%3D%274.4%27%20height%3D%2712%27%20rx%3D%271.4%27%20fill%3D%27%2310B981%27%2F%3E%3Crect%20x%3D%2710.6%27%20y%3D%276%27%20width%3D%274.4%27%20height%3D%2715%27%20rx%3D%271.4%27%20fill%3D%27%23F4F4F5%27%2F%3E%3Crect%20x%3D%2716.2%27%20y%3D%2711%27%20width%3D%274.4%27%20height%3D%2710%27%20rx%3D%271.4%27%20fill%3D%27%23A1A1AA%27%2F%3E%3Crect%20x%3D%2721.8%27%20y%3D%278%27%20width%3D%274.4%27%20height%3D%2713%27%20rx%3D%271.4%27%20fill%3D%27%2310B981%27%20fill-opacity%3D%27.45%27%2F%3E%3Cpath%20d%3D%27M4%2023h24%27%20stroke%3D%27%2334343A%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E">
 </head>
+
 <body>
 
-<header class="top">
-  <div class="top-in">
-    <a class="brand" href="./" title="SourceShelf home">
-      <svg class="brand-mark" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-        <rect x="2" y="2" width="14" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6"/>
-        <line x1="6.5" y1="2" x2="6.5" y2="16" stroke="currentColor" stroke-width="1.4"/>
-        <line x1="2" y1="11.5" x2="16" y2="11.5" stroke="currentColor" stroke-width="1.4"/>
-      </svg>
-      <span class="brand-name">SourceShelf</span>
-      <span class="brand-sub">open-source directory</span>
-    </a>
-
-    <nav class="top-nav">
-      <button class="navbtn on" id="nav-all" data-view="all">All apps</button>
-      <button class="navbtn" id="nav-new" data-view="new">New arrivals<span class="navbadge" id="nav-badge" hidden>0</span></button>
-    </nav>
-
-    <div class="top-meta">
-      <span class="live-pill" id="data-source" title="Where this page is reading apps from">
-        <i></i><span>checking storage…</span>
-      </span>
-      <span id="updated"></span>
-
-      <button class="btn-suggest" id="nav-suggest" type="button" title="Suggest an open-source app to add">+ Suggest app</button>
-
-      <a class="icon-link" href="https://github.com/storm201/sourceshelf" target="_blank" rel="noopener" aria-label="GitHub repository" title="View SourceShelf on GitHub">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.7 1.2 3.4.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/>
+  <header class="top">
+    <div class="top-in">
+      <a class="brand" href="./" title="SourceShelf home">
+        <svg class="brand-mark" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="14" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6" />
+          <line x1="6.5" y1="2" x2="6.5" y2="16" stroke="currentColor" stroke-width="1.4" />
+          <line x1="2" y1="11.5" x2="16" y2="11.5" stroke="currentColor" stroke-width="1.4" />
         </svg>
+        <span class="brand-name">SourceShelf</span>
+        <span class="brand-sub">open-source directory</span>
       </a>
 
-      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light or dark theme" title="Toggle theme">
-        <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-        </svg>
-        <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      <nav class="top-nav">
+        <button class="navbtn on" id="nav-all" data-view="all">All apps</button>
+        <button class="navbtn" id="nav-new" data-view="new">New arrivals<span class="navbadge" id="nav-badge"
+            hidden>0</span></button>
+      </nav>
+
+      <div class="top-meta">
+        <span class="live-pill" id="data-source" title="Where this page is reading apps from">
+          <i></i><span>checking storage…</span>
+        </span>
+        <span id="updated"></span>
+
+        <button class="btn-suggest" id="nav-suggest" type="button" title="Suggest an open-source app to add">+ Suggest
+          app</button>
+
+        <a class="icon-link" href="https://github.com/storm201/sourceshelf" target="_blank" rel="noopener"
+          aria-label="GitHub repository" title="View SourceShelf on GitHub">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.7 1.2 3.4.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z" />
+          </svg>
+        </a>
+
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light or dark theme" title="Toggle theme">
+          <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
+          <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      </div>
+
+      <button class="icon-btn" id="menu" aria-label="Filters">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 6h16M7 12h10M10 18h4" />
         </svg>
       </button>
     </div>
+  </header>
 
-    <button class="icon-btn" id="menu" aria-label="Filters">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-    </button>
-  </div>
-</header>
-
-<div class="shell">
-  <!-- ------------------------------------------------------- sidebar -->
-  <aside class="side" id="side">
-    <div class="fgroup">
-      <h3>Minimum stars</h3>
-      <div class="star-pills" id="star-pills">
-        <button type="button" class="star-pill on" data-stars="0">Any</button>
-        <button type="button" class="star-pill" data-stars="1000">1k+</button>
-        <button type="button" class="star-pill" data-stars="5000">5k+</button>
-        <button type="button" class="star-pill" data-stars="25000">25k+</button>
-      </div>
-      <div class="range-row">
-        <input type="range" id="star-range" min="0" max="50000" step="500" value="0" aria-label="Minimum stars slider">
-        <span class="stars-val" id="stars-val">any</span>
-      </div>
-      <label class="chk" style="margin-top:10px"><input type="checkbox" id="recent">
-        <span>Updated in last 6 months</span></label>
-    </div>
-
-    <div class="fgroup">
-      <h3>Category <button type="button" data-clear="cat">reset</button></h3>
-      <div class="f-cats" id="f-cats"></div>
-    </div>
-
-    <div class="fgroup">
-      <h3>Platform</h3>
-      <div class="pill-group" id="f-plats"></div>
-    </div>
-
-    <div class="fgroup">
-      <h3>License</h3>
-      <div class="pill-group" id="f-lics"></div>
-    </div>
-
-    <div class="fgroup side-note">
-      Data crawled from the public GitHub API. Every project listed is free and
-      open source — check its license before redistributing.
-    </div>
-  </aside>
-
-  <!-- ---------------------------------------------------------- main -->
-  <main class="main">
-    <div class="hero">
-      <div class="hero-text">
-        <h1 id="hero-title">Find your next open-source app.</h1>
-        <p id="hero-sub">Discover useful open-source software, all in one place.</p>
+  <div class="shell">
+    <!-- ------------------------------------------------------- sidebar -->
+    <aside class="side" id="side">
+      <div class="fgroup">
+        <h3>Minimum stars</h3>
+        <div class="star-pills" id="star-pills">
+          <button type="button" class="star-pill on" data-stars="0">Any</button>
+          <button type="button" class="star-pill" data-stars="1000">1k+</button>
+          <button type="button" class="star-pill" data-stars="5000">5k+</button>
+          <button type="button" class="star-pill" data-stars="25000">25k+</button>
+        </div>
+        <div class="range-row">
+          <input type="range" id="star-range" min="0" max="50000" step="500" value="0"
+            aria-label="Minimum stars slider">
+          <span class="stars-val" id="stars-val">any</span>
+        </div>
+        <label class="chk" style="margin-top:10px"><input type="checkbox" id="recent">
+          <span>Updated in last 6 months</span></label>
       </div>
 
-      <div class="search-row">
-        <div class="search-wrap" id="qwrap">
-          <span class="search-ico" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          <input id="q" class="search" type="search" placeholder="Search 1,700+ apps by name, category, platform, language…" autocomplete="off" spellcheck="false" aria-label="Search apps">
-          <span class="kbd"><kbd>/</kbd></span>
-          <button class="search-clear" id="qclear" aria-label="Clear search">×</button>
+      <div class="fgroup">
+        <h3>Category <button type="button" data-clear="cat">reset</button></h3>
+        <div class="f-cats" id="f-cats"></div>
+      </div>
+
+      <div class="fgroup">
+        <h3>Platform</h3>
+        <div class="pill-group" id="f-plats"></div>
+      </div>
+
+      <div class="fgroup">
+        <h3>License</h3>
+        <div class="pill-group" id="f-lics"></div>
+      </div>
+
+      <div class="fgroup side-note">
+        Data crawled from the public GitHub API. Every project listed is free and
+        open source — check its license before redistributing.
+      </div>
+    </aside>
+
+    <!-- ---------------------------------------------------------- main -->
+    <main class="main">
+      <div class="hero">
+        <div class="hero-text">
+          <h1 id="hero-title">Find your next open-source app.</h1>
+          <p id="hero-sub">Discover useful open-source software, all in one place.</p>
         </div>
 
-        <div class="search-controls">
-          <button type="button" class="btn-saved-pill" id="btn-saved" title="Filter to saved apps">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            <span>Saved</span>
-            <span class="saved-count" id="saved-count">0</span>
-          </button>
+        <div class="search-row">
+          <div class="search-wrap" id="qwrap">
+            <span class="search-ico" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input id="q" class="search" type="search"
+              placeholder="Search 1,700+ apps by name, category, platform, language…" autocomplete="off"
+              spellcheck="false" aria-label="Search apps">
+            <span class="kbd"><kbd>/</kbd></span>
+            <button class="search-clear" id="qclear" aria-label="Clear search">×</button>
+          </div>
 
-          <div class="shelf-export-wrap" id="shelf-export-wrap" hidden>
-            <button type="button" class="btn-export" id="btn-export" title="Export saved shelf" aria-haspopup="true" aria-expanded="false">
-              Export ▾
+          <div class="search-controls">
+            <button type="button" class="btn-saved-pill" id="btn-saved" title="Filter to saved apps">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              <span>Saved</span>
+              <span class="saved-count" id="saved-count">0</span>
             </button>
-            <div class="export-menu" id="export-menu" hidden>
-              <button type="button" class="export-item" id="export-md-copy">Copy Markdown</button>
-              <button type="button" class="export-item" id="export-md-dl">Download Markdown</button>
-              <button type="button" class="export-item" id="export-json-dl">Download JSON</button>
+
+            <div class="shelf-export-wrap" id="shelf-export-wrap" hidden>
+              <button type="button" class="btn-export" id="btn-export" title="Export saved shelf" aria-haspopup="true"
+                aria-expanded="false">
+                Export ▾
+              </button>
+              <div class="export-menu" id="export-menu" hidden>
+                <button type="button" class="export-item" id="export-md-copy">Copy Markdown</button>
+                <button type="button" class="export-item" id="export-md-dl">Download Markdown</button>
+                <button type="button" class="export-item" id="export-json-dl">Download JSON</button>
+              </div>
+            </div>
+
+            <select class="select sort-select" id="sort" aria-label="Sort by">
+              <option value="stars">Most stars</option>
+              <option value="added">Newest additions</option>
+              <option value="gain">Biggest gain today</option>
+              <option value="trending">Trending</option>
+              <option value="recent">Recently updated</option>
+              <option value="new">Newest projects</option>
+              <option value="forks">Most forks</option>
+              <option value="az">A → Z</option>
+            </select>
+
+            <div class="layout-toggle" role="group" aria-label="Layout view">
+              <button type="button" class="layout-btn on" id="view-grid" title="Grid view" aria-label="Grid view">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                </svg>
+              </button>
+              <button type="button" class="layout-btn" id="view-list" title="List view" aria-label="List view">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              </button>
             </div>
           </div>
+        </div>
 
-          <select class="select sort-select" id="sort" aria-label="Sort by">
-            <option value="stars">Most stars</option>
-            <option value="added">Newest additions</option>
-            <option value="gain">Biggest gain today</option>
-            <option value="trending">Trending</option>
-            <option value="recent">Recently updated</option>
-            <option value="new">Newest projects</option>
-            <option value="forks">Most forks</option>
-            <option value="az">A → Z</option>
-          </select>
+        <div id="tiles-wrap">
+          <div class="tiles" id="tiles"></div>
+        </div>
+      </div>
 
-          <div class="layout-toggle" role="group" aria-label="Layout view">
-            <button type="button" class="layout-btn on" id="view-grid" title="Grid view" aria-label="Grid view">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-            </button>
-            <button type="button" class="layout-btn" id="view-list" title="List view" aria-label="List view">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            </button>
+      <!-- ============ daily new arrivals (fed by the automation) ============ -->
+      <section id="newstrip" class="newstrip" hidden aria-labelledby="newstrip-t">
+        <div class="ns-head">
+          <div class="ns-title">
+            <span class="ns-dot"></span>
+            <h2 id="newstrip-t">Added today</h2>
+            <span class="ns-count" id="ns-count"></span>
           </div>
+          <button class="ns-more" id="ns-more">See all new arrivals →</button>
+        </div>
+        <div class="ns-rail" id="ns-rail"></div>
+      </section>
+
+      <!-- ============ full grouped-by-day view ============ -->
+      <section id="newview" class="newview" hidden aria-labelledby="newview-t">
+        <div class="nv-head">
+          <h2 id="newview-t">New arrivals</h2>
+          <p id="newview-sub"></p>
+        </div>
+        <div id="newview-body"></div>
+      </section>
+
+      <div class="toolbar">
+        <span class="result-count" id="count"></span>
+        <div class="active-bar" id="active"></div>
+      </div>
+
+      <div class="grid g3" id="grid"></div>
+      <div class="sentinel" id="sentinel"></div>
+      <div class="loading-more" id="load-note"></div>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <span>SourceShelf · <b id="total">1,822</b> apps indexed</span>
+    <span>Data: GitHub API · refreshed every night by a scheduled workflow</span>
+    <span>Built for people who'd rather not scroll 40 “awesome-*” lists</span>
+  </footer>
+
+  <!-- one-line hint, only shown when the build has no database connection -->
+  <div class="build-hint" id="build-hint" hidden>
+    This build has no Supabase connection, so it is reading the bundled snapshot.
+    Run <code>python scripts/build_single.py</code> once to connect it.
+    <button id="build-hint-x" aria-label="Dismiss">×</button>
+  </div>
+
+  <!-- dialog: App details -->
+  <div class="scrim" id="scrim"></div>
+  <div class="drawer" id="drawer" role="dialog" aria-label="App details">
+    <div class="drawer-h" id="drawer-head"></div>
+    <div class="drawer-b" id="drawer-body"></div>
+  </div>
+  <div class="scrim" id="scrim-side" style="z-index:94"></div>
+
+  <!-- dialog: Suggest modal -->
+  <div class="scrim" id="scrim-suggest" style="z-index:98"></div>
+  <div class="modal" id="modal-suggest" role="dialog" aria-modal="true" aria-labelledby="modal-suggest-title" hidden>
+    <div class="modal-card">
+      <div class="modal-h">
+        <div>
+          <h2 id="modal-suggest-title" class="modal-title">Suggest an open-source app</h2>
+          <p class="modal-sub">Paste any GitHub repo to preview and submit it for indexing.</p>
+        </div>
+        <button class="modal-close" id="modal-suggest-close" aria-label="Close dialog">×</button>
+      </div>
+      <div class="modal-b">
+        <div class="field">
+          <label for="suggest-repo">GitHub Repository</label>
+          <div class="input-wrap">
+            <input type="text" id="suggest-repo" placeholder="e.g. zed-industries/zed or https://github.com/..."
+              autocomplete="off" spellcheck="false">
+            <span class="input-spinner" id="suggest-spinner" hidden></span>
+          </div>
+          <span class="field-hint" id="suggest-hint">Enter owner/repo or full GitHub URL</span>
+        </div>
+
+        <div class="field">
+          <label for="suggest-cat">Primary Category</label>
+          <select id="suggest-cat" class="select select-full">
+            <option value="AI & LLM">AI & LLM</option>
+            <option value="Developer Tools">Developer Tools</option>
+            <option value="Privacy & Security">Privacy & Security</option>
+            <option value="Notes & Knowledge">Notes & Knowledge</option>
+            <option value="Productivity">Productivity</option>
+            <option value="Media & Audio">Media & Audio</option>
+            <option value="Video & Streaming">Video & Streaming</option>
+            <option value="Photos & Design">Photos & Design</option>
+            <option value="Files & Sync">Files & Sync</option>
+            <option value="Communication">Communication</option>
+            <option value="Self-Hosting & Homelab">Self-Hosting & Homelab</option>
+            <option value="Automation">Automation</option>
+            <option value="Networking">Networking</option>
+            <option value="System & Utilities">System & Utilities</option>
+            <option value="Reading & Books">Reading & Books</option>
+            <option value="Health & Fitness">Health & Fitness</option>
+            <option value="Finance">Finance</option>
+            <option value="Education">Education</option>
+            <option value="Gaming & Emulation">Gaming & Emulation</option>
+            <option value="Download & Torrent">Download & Torrent</option>
+            <option value="Maps & Travel">Maps & Travel</option>
+            <option value="Monitoring & Dashboards">Monitoring & Dashboards</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="suggest-note">Why should it be added? (optional)</label>
+          <input type="text" id="suggest-note" placeholder="Lightweight, fast, great alternative to..."
+            autocomplete="off">
+        </div>
+
+        <div class="suggest-preview-wrap" id="suggest-preview-wrap" hidden>
+          <span class="preview-label">Live Preview:</span>
+          <div id="suggest-preview"></div>
         </div>
       </div>
-
-      <div id="tiles-wrap">
-        <div class="tiles" id="tiles"></div>
+      <div class="modal-f">
+        <button class="btn btn-ghost" id="modal-suggest-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="modal-suggest-submit" type="button" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.7 1.2 3.4.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z" />
+          </svg>
+          Submit via GitHub Issue ↗
+        </button>
       </div>
-    </div>
-
-    <!-- ============ daily new arrivals (fed by the automation) ============ -->
-    <section id="newstrip" class="newstrip" hidden aria-labelledby="newstrip-t">
-      <div class="ns-head">
-        <div class="ns-title">
-          <span class="ns-dot"></span>
-          <h2 id="newstrip-t">Added today</h2>
-          <span class="ns-count" id="ns-count"></span>
-        </div>
-        <button class="ns-more" id="ns-more">See all new arrivals →</button>
-      </div>
-      <div class="ns-rail" id="ns-rail"></div>
-    </section>
-
-    <!-- ============ full grouped-by-day view ============ -->
-    <section id="newview" class="newview" hidden aria-labelledby="newview-t">
-      <div class="nv-head">
-        <h2 id="newview-t">New arrivals</h2>
-        <p id="newview-sub"></p>
-      </div>
-      <div id="newview-body"></div>
-    </section>
-
-    <div class="toolbar">
-      <span class="result-count" id="count"></span>
-      <div class="active-bar" id="active"></div>
-    </div>
-
-    <div class="grid g3" id="grid"></div>
-    <div class="sentinel" id="sentinel"></div>
-    <div class="loading-more" id="load-note"></div>
-  </main>
-</div>
-
-<footer class="foot">
-  <span>SourceShelf · <b id="total">1,822</b> apps indexed</span>
-  <span>Data: GitHub API · refreshed every night by a scheduled workflow</span>
-  <span>Built for people who'd rather not scroll 40 “awesome-*” lists</span>
-</footer>
-
-<!-- one-line hint, only shown when the build has no database connection -->
-<div class="build-hint" id="build-hint" hidden>
-  This build has no Supabase connection, so it is reading the bundled snapshot.
-  Run <code>python scripts/build_single.py</code> once to connect it.
-  <button id="build-hint-x" aria-label="Dismiss">×</button>
-</div>
-
-<!-- dialog: App details -->
-<div class="scrim" id="scrim"></div>
-<div class="drawer" id="drawer" role="dialog" aria-label="App details">
-  <div class="drawer-h" id="drawer-head"></div>
-  <div class="drawer-b" id="drawer-body"></div>
-</div>
-<div class="scrim" id="scrim-side" style="z-index:94"></div>
-
-<!-- dialog: Suggest modal -->
-<div class="scrim" id="scrim-suggest" style="z-index:98"></div>
-<div class="modal" id="modal-suggest" role="dialog" aria-modal="true" aria-labelledby="modal-suggest-title" hidden>
-  <div class="modal-card">
-    <div class="modal-h">
-      <div>
-        <h2 id="modal-suggest-title" class="modal-title">Suggest an open-source app</h2>
-        <p class="modal-sub">Paste any GitHub repo to preview and submit it for indexing.</p>
-      </div>
-      <button class="modal-close" id="modal-suggest-close" aria-label="Close dialog">×</button>
-    </div>
-    <div class="modal-b">
-      <div class="field">
-        <label for="suggest-repo">GitHub Repository</label>
-        <div class="input-wrap">
-          <input type="text" id="suggest-repo" placeholder="e.g. zed-industries/zed or https://github.com/..." autocomplete="off" spellcheck="false">
-          <span class="input-spinner" id="suggest-spinner" hidden></span>
-        </div>
-        <span class="field-hint" id="suggest-hint">Enter owner/repo or full GitHub URL</span>
-      </div>
-
-      <div class="field">
-        <label for="suggest-cat">Primary Category</label>
-        <select id="suggest-cat" class="select select-full">
-          <option value="AI & LLM">AI & LLM</option>
-          <option value="Developer Tools">Developer Tools</option>
-          <option value="Privacy & Security">Privacy & Security</option>
-          <option value="Notes & Knowledge">Notes & Knowledge</option>
-          <option value="Productivity">Productivity</option>
-          <option value="Media & Audio">Media & Audio</option>
-          <option value="Video & Streaming">Video & Streaming</option>
-          <option value="Photos & Design">Photos & Design</option>
-          <option value="Files & Sync">Files & Sync</option>
-          <option value="Communication">Communication</option>
-          <option value="Self-Hosting & Homelab">Self-Hosting & Homelab</option>
-          <option value="Automation">Automation</option>
-          <option value="Networking">Networking</option>
-          <option value="System & Utilities">System & Utilities</option>
-          <option value="Reading & Books">Reading & Books</option>
-          <option value="Health & Fitness">Health & Fitness</option>
-          <option value="Finance">Finance</option>
-          <option value="Education">Education</option>
-          <option value="Gaming & Emulation">Gaming & Emulation</option>
-          <option value="Download & Torrent">Download & Torrent</option>
-          <option value="Maps & Travel">Maps & Travel</option>
-          <option value="Monitoring & Dashboards">Monitoring & Dashboards</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="suggest-note">Why should it be added? (optional)</label>
-        <input type="text" id="suggest-note" placeholder="Lightweight, fast, great alternative to..." autocomplete="off">
-      </div>
-
-      <div class="suggest-preview-wrap" id="suggest-preview-wrap" hidden>
-        <span class="preview-label">Live Preview:</span>
-        <div id="suggest-preview"></div>
-      </div>
-    </div>
-    <div class="modal-f">
-      <button class="btn btn-ghost" id="modal-suggest-cancel" type="button">Cancel</button>
-      <button class="btn btn-primary" id="modal-suggest-submit" type="button" disabled>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.7 1.2 3.4.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
-        Submit via GitHub Issue ↗
-      </button>
     </div>
   </div>
-</div>
 
-<script src="data/config.js"></script>
-<script src="data/apps.js"></script>
-<script src="assets/app.js"></script>
+  <script src="data/config.js"></script>
+  <script src="data/apps.js"></script>
+  <script src="assets/app.js"></script>
 </body>
+
 </html>
