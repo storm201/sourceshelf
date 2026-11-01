@@ -2,25 +2,24 @@
 """
 Build step. Produces every deployable artifact in one pass:
 
-    sourceshelf.html          single self-contained page (double-click, or host anywhere)
-    dist/index.html         same page, used by the GitHub Pages deploy
-    dist/data/*             multi-file assets for Pages (config, JSON, feed)
-    dist/data/new-arrivals.json   public endpoint: newest apps, day by day
-    dist/feed.xml           RSS feed of new arrivals
-    data/config.js          runtime Supabase config (committed default = null)
+    sourceshelf.html         single self-contained page (double-click, or host anywhere)
+    dist/index.html          same page, used by the GitHub Pages deploy
+    dist/data/*              multi-file assets for Pages (config, JSON, feed)
+    dist/data/new-arrivals.json    public endpoint: newest apps, day by day
+    dist/feed.xml            RSS feed of new arrivals
+    dist/sitemap.xml         Auto-generated XML sitemap for SEO
+    data/config.js           runtime Supabase config (committed default = null)
 
 Supabase keys are injected at build time from the environment:
     SUPABASE_URL + SUPABASE_ANON_KEY   → safe to ship (read-only, RLS enforced)
 Never put the service key here: it must stay in Actions secrets only.
 """
 
-# Windows consoles default to a legacy code page; keep non-ASCII output from crashing.
 try:
     from console import safe_console
     safe_console()
 except Exception:  # pragma: no cover - never fatal
     pass
-
 
 import json
 import os
@@ -32,7 +31,6 @@ from xml.sax.saxutils import escape as xml_escape
 
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
-
 
 def parse_jwt_role(token: str) -> str | None:
     """Decode JWT payload to inspect the role claim without verifying signature."""
@@ -52,11 +50,6 @@ def parse_jwt_role(token: str) -> str | None:
 
 # --------------------------------------------------------------------- config
 def supabase_client_config() -> dict | None:
-    # Load .env here too: build_single.py is normally run as a *child* process
-    # of update.py, and a .env loaded by the parent's Python process is not
-    # visible to a fresh interpreter. Without this, `python scripts/update.py`
-    # built a site with "supabase config: none" even though .env was filled in,
-    # so the deployed page could never reach the database.
     try:
         import sys
         sys.path.insert(0, str(ROOT / "scripts"))
@@ -75,7 +68,6 @@ def supabase_client_config() -> dict | None:
     if not url or not key:
         return None
 
-    # Hard-fail if a service_role key was mistakenly passed
     role = parse_jwt_role(key)
     if role and role != "anon":
         raise RuntimeError(
@@ -84,7 +76,6 @@ def supabase_client_config() -> dict | None:
         )
 
     return {"url": url, "anonKey": key}
-
 
 def write_config(cfg: dict | None) -> None:
     body = ("/* Runtime configuration, rewritten by scripts/build_single.py.\n"
@@ -107,7 +98,6 @@ def write_new_arrivals_json(payload: dict) -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, indent=1), encoding="utf-8")
     return out
-
 
 def write_feed(payload: dict) -> Path | None:
     """RSS 2.0 feed — subscribe in any reader to hear about new apps."""
@@ -143,6 +133,25 @@ def write_feed(payload: dict) -> Path | None:
     out.write_text(xml, encoding="utf-8")
     return out
 
+def write_sitemap(meta: dict) -> Path | None:
+    """Auto-generates sitemap.xml so it never 404s on GitHub Pages."""
+    site = os.environ.get("SITE_URL", "https://storm201.github.io/sourceshelf").strip().rstrip("/")
+    gen_date = meta.get("generatedAt", datetime.now(timezone.utc).isoformat())[:10]
+    
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        '  <url>\n'
+        f'    <loc>{site}/</loc>\n'
+        f'    <lastmod>{gen_date}</lastmod>\n'
+        '    <changefreq>daily</changefreq>\n'
+        '    <priority>1.0</priority>\n'
+        '  </url>\n'
+        '</urlset>\n'
+    )
+    out = DIST / "sitemap.xml"
+    out.write_text(xml, encoding="utf-8")
+    return out
 
 # ------------------------------------------------------------------ readme
 def update_readme(meta: dict, readme_path: Path | None = None) -> bool:
@@ -198,7 +207,6 @@ def update_readme(meta: dict, readme_path: Path | None = None) -> bool:
         else:
             return False
 
-    # Also sync the seeding explanation if present
     new_text = re.sub(
         r'Otherwise day one would announce\s*"[0-9,]+ new apps today"',
         f'Otherwise day one would announce "{count_fmt} new apps today"',
@@ -210,7 +218,6 @@ def update_readme(meta: dict, readme_path: Path | None = None) -> bool:
         return True
     return False
 
-
 # -------------------------------------------------------------------- html
 def build_html() -> tuple[str, dict]:
     html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -219,24 +226,33 @@ def build_html() -> tuple[str, dict]:
     cfg = (ROOT / "data" / "config.js").read_text(encoding="utf-8")
     data = (ROOT / "data" / "apps.js").read_text(encoding="utf-8")
 
-    payload = data.split("=", 1)[1].rstrip().rstrip(";")
-    meta = json.loads(payload)["meta"]
+    payload_str = data.split("=", 1)[1].rstrip().rstrip(";")
+    payload = json.loads(payload_str)
+    meta = payload["meta"]
+    
     count_fmt = f"{meta.get('count', 0):,}"
     html = re.sub(r'<b id="total">[^<]*</b>', f'<b id="total">{count_fmt}</b>', html)
 
-    html = html.replace('<link rel="stylesheet" href="assets/app.css">',
-                        f"<style>\n{css}\n</style>")
-    # config must be inlined BEFORE the dataset/app script
-    html = html.replace('<script src="data/config.js"></script>',
-                        f"<script>\n{cfg}\n</script>")
-    html = html.replace('<script src="data/apps.js"></script>',
-                        f"<script>window.__SOURCESHELF__={payload};</script>")
-    html = html.replace('<script src="assets/app.js"></script>',
-                        f"<script>\n{js}\n</script>")
-    html = html.replace("</title>",
-                        f'</title>\n<meta name="generated" content="{meta.get("generatedAt", "")}">')
-    return html, meta
+    html = html.replace('<link rel="stylesheet" href="assets/app.css">', f"<style>\n{css}\n</style>")
+    html = html.replace('<script src="data/config.js"></script>', f"<script>\n{cfg}\n</script>")
+    html = html.replace('<script src="data/apps.js"></script>', f"<script>window.__SOURCESHELF__={payload_str};</script>")
+    html = html.replace('<script src="assets/app.js"></script>', f"<script>\n{js}\n</script>")
+    html = html.replace("</title>", f'</title>\n<meta name="generated" content="{meta.get("generatedAt", "")}">')
 
+    # SEO Injection: Build a static HTML list of all apps for Googlebot
+    seo_lines = ['<noscript><div id="seo-catalog" style="display:none;">']
+    for app in payload.get("apps", []):
+        name = xml_escape(app.get("name", ""))
+        desc = xml_escape(app.get("description", ""))
+        url = xml_escape(app.get("url") or f"https://github.com/{app.get('id', '')}")
+        cat = xml_escape(app.get("category", ""))
+        seo_lines.append(f'<article><h2><a href="{url}">{name}</a></h2><p>{desc}</p><span>{cat}</span></article>')
+    seo_lines.append('</div></noscript>')
+    
+    # Inject SEO block at the end of <main>
+    html = html.replace('</main>', '\n'.join(seo_lines) + '\n</main>')
+
+    return html, meta
 
 def check_build_secrets(targets: list[Path] | None = None) -> bool:
     """Verify built artifacts contain no service_role keys or non-anon JWTs."""
@@ -255,10 +271,8 @@ def check_build_secrets(targets: list[Path] | None = None) -> bool:
             if f.suffix in (".png", ".jpg", ".ico", ".nojekyll", ".xml"):
                 continue
             text = f.read_text(encoding="utf-8", errors="ignore")
-            # 1. Plaintext service_role detection in web-shipped files
             if "service_role" in text and f.suffix in (".html", ".js", ".json"):
                 violations.append(f"{f.name}: contains literal 'service_role'")
-            # 2. JWT role check
             for token in jwt_rx.findall(text):
                 role = parse_jwt_role(token)
                 if role and role != "anon":
@@ -271,7 +285,6 @@ def check_build_secrets(targets: list[Path] | None = None) -> bool:
         return False
     print("✓ Post-build security scan passed: zero service_role or non-anon keys detected.")
     return True
-
 
 def main() -> int:
     import sys
@@ -287,6 +300,7 @@ def main() -> int:
     if not (ROOT / "data" / "apps.json").exists():
         print("!! data/apps.json missing — run scripts/fetch_apps.py first")
         return 1
+    
     payload = json.loads((ROOT / "data" / "apps.json").read_text(encoding="utf-8"))
     meta = payload.get("meta", {})
 
@@ -306,6 +320,7 @@ def main() -> int:
 
     arrivals = write_new_arrivals_json(payload)
     feed = write_feed(payload)
+    sitemap = write_sitemap(meta) 
     readme_updated = update_readme(meta)
 
     # ---- report
@@ -316,6 +331,8 @@ def main() -> int:
           f"({sum(len(d['apps']) for d in (meta.get('newArrivals') or []))} arrivals)")
     if feed:
         print(f"wrote {feed.relative_to(ROOT)}")
+    if sitemap:
+        print(f"wrote {sitemap.relative_to(ROOT)}")
     if readme_updated:
         print(f"updated README.md  ({meta.get('count'):,} apps, {meta.get('withDownloads', 0):,} downloads)")
     print(f"supabase config: {'injected (' + cfg['url'] + ')' if cfg else 'none (static only)'}")
@@ -328,7 +345,6 @@ def main() -> int:
         return 1
 
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
