@@ -16,6 +16,8 @@
 > every step with "how to know it worked".
 >
 > ⚡ **Already know your way around? → [DEPLOY.md](DEPLOY.md)** — the compact version.
+>
+>https://storm201.github.io/sourceshelf/
 
 A fast, filterable directory of **popular open-source apps** — desktop, mobile, web,
 CLI and self-hosted — crawled from GitHub every night. Instead of hunting through
