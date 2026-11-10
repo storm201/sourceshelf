@@ -4,9 +4,9 @@
 [![Catalog Size](https://img.shields.io/badge/catalog-1%2C880%20apps-blue?style=flat-square&logo=github)](data/apps.json)
 [![Categories](https://img.shields.io/badge/categories-23-purple?style=flat-square)](scripts/taxonomy.py)
 [![Platforms](https://img.shields.io/badge/platforms-10-success?style=flat-square)](scripts/taxonomy.py)
-[![Direct Downloads](https://img.shields.io/badge/direct%20downloads-1%2C027-orange?style=flat-square)](#direct-downloads-vs-get-app)
+[![Direct Downloads](https://img.shields.io/badge/direct%20downloads-1%2C026-orange?style=flat-square)](#direct-downloads-vs-get-app)
 
-> **Current catalog: 1,880 apps · 23 categories · 10 platforms · 1,027 with direct
+> **Current catalog: 1,880 apps · 23 categories · 10 platforms · 1,026 with direct
 > download links**, crawled live from the GitHub API.
 <!-- CATALOG_STATS_END -->
 >
